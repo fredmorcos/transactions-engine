@@ -1,0 +1,75 @@
+#+TITLE: transactions-engine README
+#+AUTHOR: Fred Morcos
+
+* Assumptions
+** Primary assumption around error handling
+The "library"-ish parts ignore a transaction and throw an error when an invalid case is
+detected and leave it up to "user code" (here, main) to deal with it. In this particular
+implementation "main" prints out an error message regarding the faulty/invalid transaction
+and continue to operate. The reason for this assumption is twofold: first, the engine
+shouldn't shut down in case of faulty input (invalid transactions) and second, the
+specification is very vague and sometimes non-existant on how to handle errors.
+*** Behavior around error handling is very unclear in the specification
+One example is what happens when there are insufficient funds during withdrawal. The
+specification says "If a client does not have sufficient available funds the withdrawal
+should fail" but does not define what failing here means. If it means that the tool should
+bail out then why does the remainder of that same sentence say "and the total amount of
+funds should not change"? The assumption is then that "fail" here means to silently ignore
+the transaction (and perhaps print out a warning).
+** Locked accounts are inactive
+The specification document does not mention any behavior around locked accounts. I made an
+assumption that a locked account is automatically deactivated, which means the information
+about it can be printed out and replaced with a status bit that this client's account is
+locked. Any transactions that refer to such an account throw an error.
+** Malformed transactions are silently ignored
+Malformed transactions are silently ignored and will cause the tool to print an error but
+continue to operate. Examples of malformed transactions are deposits/withdrawals without a
+specified amount, or disputes/resolves/chargebacks with an amount.
+** Withdrawing from a non-existing account
+The assumption is that - along with most other cases - such a transaction should be
+silently ignored (and perhaps print out a warning).
+** Errors are only printed out if the -v (verbose) flag is passed
+Since it is requested that the tool not have any other output than the result account
+statuses and balances, printing out errors and ignored transactions is disabled by default
+and only enabled when at least one level of -v (verbose) flags is passed. This is also why
+most of this document use the sentence "invalid transactions throw an error and are
+silently ignored", which might be confusing at first.
+* Known shortcomings
+** The `Transaction` type is not ideal
+I could not figure how to get the `csv` crate to work with `serde`'s tagged enums, see
+[this issue](https://github.com/BurntSushi/rust-csv/issues/211). This, unfortunately,
+requires us to do some manual type-checking.
+
+The following would have been possible with internally tagged enums:
+
+#+BEGIN_SRC rust
+#[derive(Serialize, Deserialize, Debug)]
+struct CommonTransactionInfo {
+  client: u16,
+  tx: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "lowercase", tag = "type")]
+enum Transaction {
+  Deposit {
+    #[serde(flatten)]
+    info: CommonTransactionInfo,
+    amount: Decimal,
+  },
+  Withdrawal {
+    #[serde(flatten)]
+    info: CommonTransactionInfo,
+    amount: Decimal,
+  },
+  Dispute(CommonTransactionInfo),
+  Resolve(CommonTransactionInfo),
+  Chargeback(CommonTransactionInfo),
+}
+#+END_SRC
+
+Notice how `Deposit` and `Withdrawal` have the `amount` field without requiring an
+`Option<Decimal>` and the other variants can safely avoid having the field.
+** Handling overflow
+Bezos deposits that would overflow the account balance throw an error and are silently
+ignored.
