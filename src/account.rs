@@ -15,34 +15,34 @@
 
 use crate::{ClientId, Deposit, DepositHeld, TxErr, TxId, TxResult, Withdraw};
 use derive_more::Display;
-use derive_new::new;
 use rust_decimal::Decimal;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use std::collections::HashMap;
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct AccountLocked;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct AccountUnlocked;
+
+pub trait AccountState {}
+impl AccountState for AccountLocked {}
+impl AccountState for AccountUnlocked {}
+
 /// A client's account.
-#[derive(Debug, Display, PartialEq, Eq, new)]
+#[derive(Debug, Display, PartialEq, Eq)]
 #[display(fmt = "Account {} Available={}", id, available)]
-pub struct Account {
+pub struct Account<State: AccountState = AccountUnlocked> {
   id: ClientId,
-
-  #[new(default)]
   available: Decimal,
-
-  #[new(default)]
   held: Decimal,
-
-  #[new(default)]
   deposits: HashMap<TxId, Deposit>,
-
-  #[new(default)]
   withdraws: HashMap<TxId, Withdraw>,
-
-  #[new(default)]
   deposits_held: HashMap<TxId, Deposit<DepositHeld>>,
+  state: State,
 }
 
-impl Account {
+impl<State: AccountState> Account<State> {
   pub fn id(&self) -> ClientId {
     self.id
   }
@@ -57,6 +57,32 @@ impl Account {
 
   pub fn total(&self) -> Decimal {
     self.available + self.held
+  }
+}
+
+impl Account<AccountUnlocked> {
+  pub fn new(id: ClientId) -> Self {
+    Self {
+      id,
+      available: Decimal::ZERO,
+      held: Decimal::ZERO,
+      deposits: HashMap::default(),
+      withdraws: HashMap::default(),
+      deposits_held: HashMap::default(),
+      state: AccountUnlocked,
+    }
+  }
+
+  pub fn lock(self) -> Account<AccountLocked> {
+    Account::<AccountLocked> {
+      id: self.id,
+      available: self.available,
+      held: self.held,
+      deposits: self.deposits,
+      withdraws: self.withdraws,
+      deposits_held: self.deposits_held,
+      state: AccountLocked,
+    }
   }
 
   pub(crate) fn deposit(&mut self, tx: Deposit) -> TxResult {
@@ -137,18 +163,46 @@ impl Account {
   }
 }
 
-impl Serialize for Account {
-  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-  where
-    S: Serializer,
-  {
-    let mut state = serializer.serialize_struct("Account", 5)?;
-    state.serialize_field("client", &self.id())?;
-    state.serialize_field("available", &self.available())?;
-    state.serialize_field("held", &self.held())?;
-    state.serialize_field("total", &self.total())?;
-    state.serialize_field("locked", &false)?;
-    state.end()
+fn serialize_account<S: Serializer>(
+  serializer: S,
+  id: ClientId,
+  available: Decimal,
+  held: Decimal,
+  total: Decimal,
+  locked: bool,
+) -> Result<S::Ok, S::Error> {
+  let mut state = serializer.serialize_struct("Account", 5)?;
+  state.serialize_field("client", &id)?;
+  state.serialize_field("available", &available)?;
+  state.serialize_field("held", &held)?;
+  state.serialize_field("total", &total)?;
+  state.serialize_field("locked", &locked)?;
+  state.end()
+}
+
+impl Serialize for Account<AccountUnlocked> {
+  fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    serialize_account(
+      serializer,
+      self.id(),
+      self.available(),
+      self.held(),
+      self.total(),
+      false,
+    )
+  }
+}
+
+impl Serialize for Account<AccountLocked> {
+  fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    serialize_account(
+      serializer,
+      self.id(),
+      self.available(),
+      self.held(),
+      self.total(),
+      true,
+    )
   }
 }
 
