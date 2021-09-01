@@ -14,7 +14,8 @@
 #![warn(clippy::all)]
 
 use crate::{
-  Account, ClientId, Deposit, Dispute, Tx, TxErr, TxId, TxResult, TxType, Withdraw,
+  Account, ClientId, Deposit, Dispute, Resolve, Tx, TxErr, TxId, TxResult, TxType,
+  Withdraw,
 };
 use derive_new::new;
 use rust_decimal::Decimal;
@@ -70,6 +71,10 @@ impl Db {
         ensure_no_amount(tx)?;
         self.dispute(id, client)
       }
+      TxType::Resolve => {
+        ensure_no_amount(tx)?;
+        self.resolve(id, client)
+      }
     }
   }
 
@@ -118,6 +123,20 @@ impl Db {
 
     if let Some(account) = self.accounts.get_mut(&client) {
       account.dispute(tx)
+    } else {
+      Err(TxErr::AccessUnavailable)
+    }
+  }
+
+  fn resolve(&mut self, id: TxId, client: ClientId) -> TxResult {
+    let tx = Resolve::new(id, client);
+
+    if !self.tx_ids.contains(&id) {
+      return Err(TxErr::MissingTx);
+    }
+
+    if let Some(account) = self.accounts.get_mut(&client) {
+      account.resolve(tx)
     } else {
       Err(TxErr::AccessUnavailable)
     }

@@ -116,6 +116,25 @@ impl Account {
 
     Ok(())
   }
+
+  pub(crate) fn resolve(&mut self, tx: crate::Resolve) -> TxResult {
+    let id = tx.id();
+
+    let deposit = match self.deposits_held.remove(&id) {
+      Some(deposit) => deposit,
+      None => return Err(TxErr::MissingTxForClient),
+    };
+
+    assert!(!self.deposits.contains_key(&id));
+    assert!(deposit.amount() <= self.held());
+
+    self.available += deposit.amount();
+    self.held -= deposit.amount();
+
+    self.deposits.insert(id, deposit.release());
+
+    Ok(())
+  }
 }
 
 impl Serialize for Account {

@@ -23,6 +23,7 @@ pub enum TxType {
   Deposit,
   Withdrawal,
   Dispute,
+  Resolve,
 }
 
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
@@ -46,5 +47,9 @@ impl Tx {
 
   pub fn new_dispute(tx: u32, client: u16) -> Self {
     Self { typ: TxType::Dispute, client, tx, amount: None }
+  }
+
+  pub fn new_resolve(tx: u32, client: u16) -> Self {
+    Self { typ: TxType::Resolve, client, tx, amount: None }
   }
 }

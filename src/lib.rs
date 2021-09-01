@@ -19,6 +19,7 @@ pub mod deposit;
 pub mod dispute;
 pub mod err;
 pub mod id;
+pub mod resolve;
 pub mod tx;
 pub mod withdraw;
 
@@ -28,5 +29,6 @@ pub use crate::deposit::{Deposit, DepositHeld, DepositReleased};
 pub use crate::dispute::Dispute;
 pub use crate::err::{TxErr, TxResult};
 pub use crate::id::{ClientId, TxId};
+pub use crate::resolve::Resolve;
 pub use crate::tx::{Tx, TxType};
 pub use crate::withdraw::Withdraw;
