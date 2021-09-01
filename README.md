@@ -52,6 +52,34 @@ without a specified amount, or disputes/resolves/chargebacks with a specified am
 Large deposits which would overflow an account balance print an error and are silently
 ignored.
 
+## State structs
+
+Some of the code makes use of the type system to ensure some properties, especially where
+a state machine of sorts is involved.
+
+One rather simple example is differentiating between locked and unlocked accounts. Instead
+of adding a boolean field (e.g. `locked`) to the `Account` struct, a trait
+(e.g. `AccountState`) is instead defined and zero-sized structs are used to represent the
+different states of an account: `AccountLocked` and `AccountUnlocked`. The `Account` type
+is then parameterized with a `State` generic:  `Account<State: AccountState>`. Accounts
+are unlocked by default. Since accounts can only be locked but not unlocked,
+`Account<Unlocked>` implements a `lock(self) -> Account<Locked>` method while
+`Account<Locked>` does not implement an `unlock(self) -> Account<Unlocked>` method.
+
+Another part where this pattern is used is deposits. Deposits can be in a normal state
+(i.e. `DepositReleased`), a held state or a reversed state. Deposits in a normal state can
+only be held but not released nor reversed and deposits in a held state can either be
+released or reversed, but not held. Hence, `Deposit<Released>` implements a `hold(self) ->
+Deposit<Held>` method and `Deposit<Held>` implements both a `release(self) ->
+Deposit<Released>` method and a `reverse(self) -> Deposit<Reversed>` method.
+
+Note that the state transition methods take ownership of (i.e. consume) the object, that
+is to ensure that the source object is removed from its container and no longer exits
+after the transition.
+
+This use of the type system is also useful to ensure that certain objects cannot be
+misused or placed in containers where they must not be.
+
 ## Assumptions
 
 ### Non-deposit operations on non-existing Accounts
