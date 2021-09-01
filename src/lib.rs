@@ -14,6 +14,7 @@
 #![warn(clippy::all)]
 
 pub mod account;
+pub mod chargeback;
 pub mod db;
 pub mod deposit;
 pub mod dispute;
@@ -23,9 +24,10 @@ pub mod resolve;
 pub mod tx;
 pub mod withdraw;
 
-pub use crate::account::Account;
+pub use crate::account::{Account, AccountLocked, AccountUnlocked};
+pub use crate::chargeback::Chargeback;
 pub use crate::db::Db;
-pub use crate::deposit::{Deposit, DepositHeld, DepositReleased};
+pub use crate::deposit::{Deposit, DepositHeld, DepositReleased, DepositReversed};
 pub use crate::dispute::Dispute;
 pub use crate::err::{TxErr, TxResult};
 pub use crate::id::{ClientId, TxId};

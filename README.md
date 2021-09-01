@@ -61,6 +61,14 @@ silently ignored (and perhaps print out a warning message). That is as opposed t
 e.g. creating an account with a negative balance in the case of a withdrawal on a
 non-existing account.
 
+### Resolves and Chargebacks
+
+Resolves and chargebacks are treated as different ways to end a dispute. The specification
+is not clear on the relationship between the two. In this implementation, resolves are
+used to end a dispute when the dispute is unfounded and the state of the account should go
+back to normal operation, while chargebacks are used when the dispute is in fact founded
+and the client should receive a payout - reversing the deposit and locking their account.
+
 ## Known shortcomings
 
 ### The `Tx` Type
