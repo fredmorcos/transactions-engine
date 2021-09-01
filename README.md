@@ -130,3 +130,11 @@ multi-threaded application in case a bug triggers an assertion failure.
 There is unfortunately not much in the way of code documentation and extensive tests. The
 different ways an operation can fail - along with some notes - are documented with their
 respective structs. Small unit and integration tests are available for simple scenarios.
+
+### Operation structs are more bloated than necessary
+
+Operation structs (e.g. Deposit, Withdraw, etc...) don't really need to contain the client
+ID and the transaction ID and can just be thin wrappers around their values and
+states. This would simplify quite a few things, and would also reduce the number of
+required assertions. However, I am leaving them the way they currently are for good
+measure.
