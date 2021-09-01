@@ -103,6 +103,11 @@ enum Transaction {
 Notice how `Deposit` and `Withdrawal` have the `amount` field without requiring an
 `Option<Decimal>` and the other variants can safely avoid having the field altogether.
 
+### Disputes
+
+Disputes only refer to deposits. I do not see how disputes could work for e.g. withdrawals
+without human intervention (as the spec mentions: think of an ATM withdrawal).
+
 ### Assertions
 
 Assertions are used to ensure programming errors (e.g. invalid state) end the execution of

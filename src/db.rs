@@ -13,7 +13,9 @@
 
 #![warn(clippy::all)]
 
-use crate::{Account, ClientId, Deposit, Tx, TxErr, TxId, TxResult, TxType, Withdraw};
+use crate::{
+  Account, ClientId, Deposit, Dispute, Tx, TxErr, TxId, TxResult, TxType, Withdraw,
+};
 use derive_new::new;
 use rust_decimal::Decimal;
 use std::collections::{HashMap, HashSet};
@@ -45,6 +47,13 @@ impl Db {
       }
     }
 
+    fn ensure_no_amount(tx: &Tx) -> TxResult {
+      match tx.amount {
+        Some(_) => Err(TxErr::ExtraneousAmount),
+        None => Ok(()),
+      }
+    }
+
     let id = TxId::new(tx.tx);
     let client = ClientId::new(tx.client);
 
@@ -56,6 +65,10 @@ impl Db {
       TxType::Withdrawal => {
         let amount = ensure_amount(tx)?;
         self.withdraw(id, client, amount)
+      }
+      TxType::Dispute => {
+        ensure_no_amount(tx)?;
+        self.dispute(id, client)
       }
     }
   }
@@ -91,6 +104,20 @@ impl Db {
       account.withdraw(tx)?;
       self.tx_ids.insert(id);
       Ok(())
+    } else {
+      Err(TxErr::AccessUnavailable)
+    }
+  }
+
+  fn dispute(&mut self, id: TxId, client: ClientId) -> TxResult {
+    let tx = Dispute::new(id, client);
+
+    if !self.tx_ids.contains(&id) {
+      return Err(TxErr::MissingTx);
+    }
+
+    if let Some(account) = self.accounts.get_mut(&client) {
+      account.dispute(tx)
     } else {
       Err(TxErr::AccessUnavailable)
     }

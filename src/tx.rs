@@ -22,6 +22,7 @@ use serde::{Deserialize, Serialize};
 pub enum TxType {
   Deposit,
   Withdrawal,
+  Dispute,
 }
 
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
@@ -41,5 +42,9 @@ impl Tx {
 
   pub fn new_withdraw(tx: u32, client: u16, amount: Decimal) -> Self {
     Self { typ: TxType::Withdrawal, client, tx, amount: Some(amount) }
+  }
+
+  pub fn new_dispute(tx: u32, client: u16) -> Self {
+    Self { typ: TxType::Dispute, client, tx, amount: None }
   }
 }
