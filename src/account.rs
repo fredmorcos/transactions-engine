@@ -13,7 +13,7 @@
 
 #![warn(clippy::all)]
 
-use crate::{ClientId, Deposit, TxErr, TxId, TxResult, Withdraw};
+use crate::{ClientId, Deposit, DepositHeld, TxErr, TxId, TxResult, Withdraw};
 use derive_more::Display;
 use derive_new::new;
 use rust_decimal::Decimal;
@@ -37,6 +37,9 @@ pub struct Account {
 
   #[new(default)]
   withdraws: HashMap<TxId, Withdraw>,
+
+  #[new(default)]
+  deposits_held: HashMap<TxId, Deposit<DepositHeld>>,
 }
 
 impl Account {
@@ -85,6 +88,31 @@ impl Account {
     // The database ensures that the transaction ID is not a duplicate.
     self.withdraws.insert(tx.id(), tx);
     self.available -= tx.amount();
+
+    Ok(())
+  }
+
+  pub(crate) fn dispute(&mut self, tx: crate::Dispute) -> TxResult {
+    assert_eq!(self.id, tx.client());
+
+    let id = tx.id();
+
+    let deposit = match self.deposits.remove(&id) {
+      Some(deposit) => deposit,
+      None => return Err(TxErr::MissingTxForClient),
+    };
+
+    assert!(!self.deposits_held.contains_key(&id));
+
+    if deposit.amount() > self.available {
+      self.deposits.insert(id, deposit);
+      return Err(TxErr::Insufficient);
+    }
+
+    self.available -= deposit.amount();
+    self.held += deposit.amount();
+
+    self.deposits_held.insert(id, deposit.hold());
 
     Ok(())
   }

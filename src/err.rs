@@ -35,6 +35,15 @@ pub enum TxErr {
 
   #[display(fmt = "Duplicate transaction ID")]
   Duplicate,
+
+  #[display(fmt = "Transaction has an unexpected amount value")]
+  ExtraneousAmount,
+
+  #[display(fmt = "Referenced transaction does not exist")]
+  MissingTx,
+
+  #[display(fmt = "Referenced transaction does not belong to client")]
+  MissingTxForClient,
 }
 
 pub type TxResult = Result<(), TxErr>;
