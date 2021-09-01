@@ -17,6 +17,16 @@ use crate::{ClientId, TxErr, TxId};
 use derive_more::Display;
 use rust_decimal::Decimal;
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct DepositHeld;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct DepositReleased;
+
+pub trait DepositState {}
+impl DepositState for DepositHeld {}
+impl DepositState for DepositReleased {}
+
 /// A deposit is a credit to the client's account.
 ///
 /// A deposit must increase the available (and total) funds in the account.
@@ -35,21 +45,14 @@ use rust_decimal::Decimal;
 /// or available balance.
 #[derive(Debug, Display, PartialEq, Eq, Hash, Clone, Copy)]
 #[display(fmt = "Deposit {} {} Amount={}", id, client, amount)]
-pub struct Deposit {
+pub struct Deposit<State: DepositState = DepositReleased> {
   id: TxId,
   client: ClientId,
   amount: Decimal,
+  state: State,
 }
 
-impl Deposit {
-  pub fn new(id: TxId, client: ClientId, amount: Decimal) -> Result<Self, TxErr> {
-    if amount.is_sign_negative() {
-      Err(TxErr::NegativeAmount)
-    } else {
-      Ok(Self { id, client, amount })
-    }
-  }
-
+impl<State: DepositState> Deposit<State> {
   /// Get the deposit's id.
   pub fn id(&self) -> TxId {
     self.id
@@ -66,9 +69,39 @@ impl Deposit {
   }
 }
 
+impl Deposit<DepositReleased> {
+  pub fn new(id: TxId, client: ClientId, amount: Decimal) -> Result<Self, TxErr> {
+    if amount.is_sign_negative() {
+      Err(TxErr::NegativeAmount)
+    } else {
+      Ok(Self { id, client, amount, state: DepositReleased })
+    }
+  }
+
+  pub fn hold(self) -> Deposit<DepositHeld> {
+    Deposit::<DepositHeld> {
+      id: self.id,
+      client: self.client,
+      amount: self.amount,
+      state: DepositHeld,
+    }
+  }
+}
+
+impl Deposit<DepositHeld> {
+  pub fn release(self) -> Deposit<DepositReleased> {
+    Deposit::<DepositReleased> {
+      id: self.id,
+      client: self.client,
+      amount: self.amount,
+      state: DepositReleased,
+    }
+  }
+}
+
 #[cfg(test)]
 mod deposit_tests {
-  use crate::{ClientId, Deposit, TxErr, TxId};
+  use crate::{deposit::DepositReleased, ClientId, Deposit, TxErr, TxId};
   use rust_decimal::Decimal;
 
   #[test]
@@ -79,7 +112,7 @@ mod deposit_tests {
 
     assert_eq!(
       Deposit::new(tx_id, client_id, amount),
-      Ok(Deposit { id: tx_id, client: client_id, amount })
+      Ok(Deposit { id: tx_id, client: client_id, amount, state: DepositReleased })
     );
   }
 

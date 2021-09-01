@@ -54,11 +54,12 @@ ignored.
 
 ## Assumptions
 
-### Withdrawals from non-existing Accounts
+### Non-deposit operations on non-existing Accounts
 
-The assumption is that - along with most other cases - such a transaction should be
-silently ignored (and perhaps print out a warning message). That is as opposed to creating
-an account with a negative balance.
+The assumption is that - along with most other cases - such transactions should be
+silently ignored (and perhaps print out a warning message). That is as opposed to
+e.g. creating an account with a negative balance in the case of a withdrawal on a
+non-existing account.
 
 ## Known shortcomings
 
@@ -102,6 +103,11 @@ enum Transaction {
 
 Notice how `Deposit` and `Withdrawal` have the `amount` field without requiring an
 `Option<Decimal>` and the other variants can safely avoid having the field altogether.
+
+### Disputes
+
+Disputes only refer to deposits. I do not see how disputes could work for e.g. withdrawals
+without human intervention (as the specification mentions: think of an ATM withdrawal).
 
 ### Assertions
 
