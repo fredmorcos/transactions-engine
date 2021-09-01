@@ -13,7 +13,9 @@
 
 #![warn(clippy::all)]
 
-use crate::{ClientId, Deposit, DepositHeld, TxErr, TxId, TxResult, Withdraw};
+use crate::{
+  ClientId, Deposit, DepositHeld, DepositReversed, TxErr, TxId, TxResult, Withdraw,
+};
 use derive_more::Display;
 use rust_decimal::Decimal;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
@@ -37,8 +39,9 @@ pub struct Account<State: AccountState = AccountUnlocked> {
   available: Decimal,
   held: Decimal,
   deposits: HashMap<TxId, Deposit>,
-  withdraws: HashMap<TxId, Withdraw>,
   deposits_held: HashMap<TxId, Deposit<DepositHeld>>,
+  deposits_reversed: HashMap<TxId, Deposit<DepositReversed>>,
+  withdraws: HashMap<TxId, Withdraw>,
   state: State,
 }
 
@@ -67,8 +70,9 @@ impl Account<AccountUnlocked> {
       available: Decimal::ZERO,
       held: Decimal::ZERO,
       deposits: HashMap::default(),
-      withdraws: HashMap::default(),
       deposits_held: HashMap::default(),
+      deposits_reversed: HashMap::default(),
+      withdraws: HashMap::default(),
       state: AccountUnlocked,
     }
   }
@@ -79,8 +83,9 @@ impl Account<AccountUnlocked> {
       available: self.available,
       held: self.held,
       deposits: self.deposits,
-      withdraws: self.withdraws,
       deposits_held: self.deposits_held,
+      deposits_reversed: self.deposits_reversed,
+      withdraws: self.withdraws,
       state: AccountLocked,
     }
   }
@@ -129,6 +134,7 @@ impl Account<AccountUnlocked> {
     };
 
     assert!(!self.deposits_held.contains_key(&id));
+    assert!(!self.deposits_reversed.contains_key(&id));
 
     if deposit.amount() > self.available() {
       self.deposits.insert(id, deposit);
@@ -152,12 +158,32 @@ impl Account<AccountUnlocked> {
     };
 
     assert!(!self.deposits.contains_key(&id));
+    assert!(!self.deposits_reversed.contains_key(&id));
     assert!(deposit.amount() <= self.held());
 
     self.available += deposit.amount();
     self.held -= deposit.amount();
 
     self.deposits.insert(id, deposit.release());
+
+    Ok(())
+  }
+
+  pub(crate) fn chargeback(&mut self, tx: crate::Chargeback) -> TxResult {
+    let id = tx.id();
+
+    let deposit = match self.deposits_held.remove(&id) {
+      Some(deposit) => deposit,
+      None => return Err(TxErr::MissingTxForClient),
+    };
+
+    assert!(!self.deposits.contains_key(&id));
+    assert!(!self.deposits_held.contains_key(&id));
+    assert!(deposit.amount() <= self.held());
+
+    self.held -= deposit.amount();
+
+    self.deposits_reversed.insert(id, deposit.reverse());
 
     Ok(())
   }

@@ -24,6 +24,7 @@ pub enum TxType {
   Withdrawal,
   Dispute,
   Resolve,
+  Chargeback,
 }
 
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
@@ -51,5 +52,9 @@ impl Tx {
 
   pub fn new_resolve(tx: u32, client: u16) -> Self {
     Self { typ: TxType::Resolve, client, tx, amount: None }
+  }
+
+  pub fn new_chargeback(tx: u32, client: u16) -> Self {
+    Self { typ: TxType::Chargeback, client, tx, amount: None }
   }
 }

@@ -14,8 +14,8 @@
 #![warn(clippy::all)]
 
 use crate::{
-  Account, ClientId, Deposit, Dispute, Resolve, Tx, TxErr, TxId, TxResult, TxType,
-  Withdraw,
+  Account, AccountLocked, Chargeback, ClientId, Deposit, Dispute, Resolve, Tx, TxErr,
+  TxId, TxResult, TxType, Withdraw,
 };
 use derive_new::new;
 use rust_decimal::Decimal;
@@ -28,12 +28,19 @@ pub struct Db {
   accounts: HashMap<ClientId, Account>,
 
   #[new(default)]
+  accounts_locked: HashMap<ClientId, Account<AccountLocked>>,
+
+  #[new(default)]
   tx_ids: HashSet<TxId>,
 }
 
 impl Db {
   pub fn accounts(&self) -> impl Iterator<Item = &Account> {
     self.accounts.values()
+  }
+
+  pub fn accounts_locked(&self) -> impl Iterator<Item = &Account<AccountLocked>> {
+    self.accounts_locked.values()
   }
 
   pub fn get_account(&self, id: ClientId) -> Option<&Account> {
@@ -74,6 +81,10 @@ impl Db {
       TxType::Resolve => {
         ensure_no_amount(tx)?;
         self.resolve(id, client)
+      }
+      TxType::Chargeback => {
+        ensure_no_amount(tx)?;
+        self.chargeback(id, client)
       }
     }
   }
@@ -140,6 +151,28 @@ impl Db {
     } else {
       Err(TxErr::AccessUnavailable)
     }
+  }
+
+  pub(crate) fn chargeback(&mut self, id: TxId, client: ClientId) -> TxResult {
+    let tx = Chargeback::new(id, client);
+
+    if !self.tx_ids.contains(&id) {
+      return Err(TxErr::MissingTx);
+    }
+
+    let mut account = match self.accounts.remove(&client) {
+      Some(account) => account,
+      None => return Err(TxErr::AccessUnavailable),
+    };
+
+    if let Err(err) = account.chargeback(tx) {
+      self.accounts.insert(client, account);
+      return Err(err);
+    }
+
+    self.accounts_locked.insert(client, account.lock());
+
+    Ok(())
   }
 }
 

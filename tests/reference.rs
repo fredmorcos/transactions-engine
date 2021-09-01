@@ -75,6 +75,10 @@ fn reference() {
             csv_writer.serialize(account).unwrap();
           }
 
+          for account in db.accounts_locked() {
+            csv_writer.serialize(account).unwrap();
+          }
+
           csv_writer.flush().unwrap();
         }
 

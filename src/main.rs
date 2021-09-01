@@ -137,6 +137,10 @@ fn main() -> Result<(), Err> {
     writer.serialize(account)?;
   }
 
+  for account in db.accounts_locked() {
+    writer.serialize(account)?;
+  }
+
   writer.flush()?;
 
   Ok(())
