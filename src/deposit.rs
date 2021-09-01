@@ -23,9 +23,13 @@ pub struct DepositHeld;
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct DepositReleased;
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct DepositReversed;
+
 pub trait DepositState {}
 impl DepositState for DepositHeld {}
 impl DepositState for DepositReleased {}
+impl DepositState for DepositReversed {}
 
 /// A deposit is a credit to the client's account.
 ///
@@ -95,6 +99,15 @@ impl Deposit<DepositHeld> {
       client: self.client,
       amount: self.amount,
       state: DepositReleased,
+    }
+  }
+
+  pub fn reverse(self) -> Deposit<DepositReversed> {
+    Deposit::<DepositReversed> {
+      id: self.id,
+      client: self.client,
+      amount: self.amount,
+      state: DepositReversed,
     }
   }
 }
