@@ -32,22 +32,13 @@ struct Opt {
   #[structopt(short, long, parse(from_occurrences))]
   verbose: u8,
 
-  /// Subcommand.
-  #[structopt(subcommand)]
-  command: Command,
-}
+  /// Show licenses (stops program execution).
+  #[structopt(short, long)]
+  license: bool,
 
-#[derive(Debug, StructOpt)]
-enum Command {
-  /// Show license information.
-  License,
-
-  /// Process a CSV file.
-  Process {
-    /// Input CSV file.
-    #[structopt(name = "FILE", parse(from_os_str))]
-    file: PathBuf,
-  },
+  /// Input CSV file.
+  #[structopt(name = "FILE", parse(from_os_str))]
+  file: PathBuf,
 }
 
 #[derive(From, Display)]
@@ -72,15 +63,12 @@ impl fmt::Debug for Err {
 fn main() -> Result<(), Err> {
   let opt = Opt::from_args();
 
-  let file = match opt.command {
-    Command::License => {
-      eprintln!("{}", LICENSE);
-      eprintln!();
-      eprintln!("{}", LICENSE_DEPS);
-      return Ok(());
-    }
-    Command::Process { file } => file,
-  };
+  if opt.license {
+    eprintln!("{}", LICENSE);
+    eprintln!();
+    eprintln!("{}", LICENSE_DEPS);
+    return Ok(());
+  }
 
   let log_level = match opt.verbose {
     0 => log::LevelFilter::Off,
@@ -101,7 +89,7 @@ fn main() -> Result<(), Err> {
   debug!("Debug output enabled.");
   trace!("Trace output enabled.");
 
-  let input_file = File::open(file)?;
+  let input_file = File::open(opt.file)?;
   let mut reader =
     csv::ReaderBuilder::new().flexible(true).trim(csv::Trim::All).from_reader(input_file);
 
