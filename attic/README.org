@@ -8,7 +8,7 @@ detected and leave it up to "user code" (here, main) to deal with it. In this pa
 implementation "main" prints out an error message regarding the faulty/invalid transaction
 and continue to operate. The reason for this assumption is twofold: first, the engine
 shouldn't shut down in case of faulty input (invalid transactions) and second, the
-specification is very vague and sometimes non-existant on how to handle errors.
+specification is very vague and sometimes non-existent on how to handle errors.
 *** Behavior around error handling is very unclear in the specification
 One example is what happens when there are insufficient funds during withdrawal. The
 specification says "If a client does not have sufficient available funds the withdrawal
