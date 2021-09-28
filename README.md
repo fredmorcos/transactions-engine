@@ -106,7 +106,7 @@ crate to work with `serde`'s tagged enums, see [this
 issue](https://github.com/BurntSushi/rust-csv/issues/211).
 
 This, unfortunately, requires us to do some manual type-checking: one example is to make
-sure deposits and withdrawals come with an specified amount, and other types of
+sure deposits and withdrawals come with a specified amount, and other types of
 transactions don't. With tagged enums, such a check would be done by serde.
 
 The following would have been possible with internally tagged enums:
