@@ -1,4 +1,4 @@
-# `transactions-engine`
+# `transactions-engine`: Kraken Payward Programming Test
 
 [Github Repository](https://github.com/fredmorcos/transactions-engine)
 
