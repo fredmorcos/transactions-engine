@@ -19,7 +19,7 @@ use crate::{
 use derive_more::Display;
 use rust_decimal::Decimal;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
-use std::collections::HashMap;
+use std::{collections::HashMap, marker::PhantomData};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct AccountLocked;
@@ -42,7 +42,7 @@ pub struct Account<State: AccountState = AccountUnlocked> {
   deposits_held: HashMap<TxId, Deposit<DepositHeld>>,
   deposits_reversed: HashMap<TxId, Deposit<DepositReversed>>,
   withdraws: HashMap<TxId, Withdraw>,
-  state: State,
+  phantom: PhantomData<State>,
 }
 
 impl<State: AccountState> Account<State> {
@@ -73,7 +73,7 @@ impl Account<AccountUnlocked> {
       deposits_held: HashMap::default(),
       deposits_reversed: HashMap::default(),
       withdraws: HashMap::default(),
-      state: AccountUnlocked,
+      phantom: PhantomData,
     }
   }
 
@@ -86,7 +86,7 @@ impl Account<AccountUnlocked> {
       deposits_held: self.deposits_held,
       deposits_reversed: self.deposits_reversed,
       withdraws: self.withdraws,
-      state: AccountLocked,
+      phantom: PhantomData,
     }
   }
 
