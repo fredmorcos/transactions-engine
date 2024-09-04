@@ -13,31 +13,31 @@
 
 #![warn(clippy::all)]
 
+use clap::Parser;
 use derive_more::{Display, From};
 use log::{debug, error, info, trace, warn};
 use std::fmt;
 use std::fs::File;
 use std::io;
 use std::path::PathBuf;
-use structopt::StructOpt;
 use tx_engine::{ClientId, Db, TxErr};
 
 const LICENSE: &str = include_str!("../LICENSE");
 const LICENSE_DEPS: &str = include_str!("../LICENSE.dependencies");
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "transactions-engine")]
+#[derive(Debug, clap::Parser)]
+#[clap(author, version, about, long_about = None)]
 struct Opt {
-  /// Verbose output (can be specified multiple times).
-  #[structopt(short, long, parse(from_occurrences))]
+  /// Verbose output (can be specified multiple times)
+  #[clap(short, long, action = clap::ArgAction::Count)]
   verbose: u8,
 
   /// Show licenses (stops program execution).
-  #[structopt(short, long)]
+  #[clap(short, long)]
   license: bool,
 
   /// Input CSV file.
-  #[structopt(name = "FILE", parse(from_os_str))]
+  #[clap(name = "FILE")]
   file: PathBuf,
 }
 
@@ -61,7 +61,7 @@ impl fmt::Debug for Err {
 }
 
 fn main() -> Result<(), Err> {
-  let opt = Opt::from_args();
+  let opt = Opt::parse();
 
   if opt.license {
     eprintln!("{}", LICENSE);
