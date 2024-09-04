@@ -28,13 +28,13 @@ use derive_new::new;
 /// * An error is thrown if the [transaction ID](TxId) does not already exist.
 ///
 /// * An error is thrown if the [transaction ID](TxId) does not refer to a held deposit
-/// transaction associated with [the corresponding client](ClientId).
+///   transaction associated with [the corresponding client](ClientId).
 ///
 /// # Notes
 ///
 /// * The amount being resolved cannot overflow the available funds since it refers to a
-/// pre-existing transaction and it was checked that the available and total funds cannot
-/// overflow during the entrance of said transaction.
+///   pre-existing transaction and it was checked that the available and total funds
+///   cannot overflow during the entrance of said transaction.
 ///
 /// * The amount being resolved can only be less than or equal to the held funds.
 #[derive(Debug, Display, PartialEq, Eq, Hash, Clone, Copy, new)]

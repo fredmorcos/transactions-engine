@@ -46,7 +46,7 @@ impl DepositState for DepositReversed {}
 /// * An error is thrown if the amount is negative.
 ///
 /// * An error is thrown if the amount being deposited would overflow the account's total
-/// or available balance.
+///   or available balance.
 #[derive(Debug, Display, PartialEq, Eq, Hash, Clone, Copy)]
 #[display(fmt = "Deposit {} {} Amount={}", id, client, amount)]
 pub struct Deposit<State: DepositState = DepositReleased> {

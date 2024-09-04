@@ -28,16 +28,16 @@ use derive_new::new;
 /// * An error is thrown if the [transaction ID](TxId) does not already exist.
 ///
 /// * An error is thrown if the [transaction ID](TxId) does not refer to a released
-/// deposit transaction associated with [the corresponding client](ClientId).
+///   deposit transaction associated with [the corresponding client](ClientId).
 ///
 /// * An error is thrown if the amount being disputed is larger than the available balance
-/// in the client's account.
+///   in the client's account.
 ///
 /// # Notes
 ///
 /// * The amount being disputed cannot overflow the held funds since it refers to a
-/// pre-existing transaction and it was checked that the available and total funds cannot
-/// overflow during the entrance of said transaction.
+///   pre-existing transaction and it was checked that the available and total funds
+///   cannot overflow during the entrance of said transaction.
 #[derive(Debug, Display, PartialEq, Eq, Hash, Clone, Copy, new)]
 #[display(fmt = "Dispute {} {}", id, client)]
 pub struct Dispute {

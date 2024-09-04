@@ -28,7 +28,7 @@ use derive_new::new;
 /// * An error is thrown if the [transaction ID](TxId) does not already exist.
 ///
 /// * An error is thrown if the [transaction ID](TxId) does not refer to a held deposit
-/// transaction associated with [the corresponding client](ClientId).
+///   transaction associated with [the corresponding client](ClientId).
 ///
 /// # Notes
 ///

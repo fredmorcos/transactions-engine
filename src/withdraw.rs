@@ -30,7 +30,7 @@ use rust_decimal::Decimal;
 /// * An error is thrown if the amount is negative.
 ///
 /// * An error is thrown if the amount being withdrawn is more than the available balance
-/// in the client's account.
+///   in the client's account.
 #[derive(Debug, Display, PartialEq, Eq, Clone, Copy)]
 #[display(fmt = "Withdrawal {} {} Amount={}", id, client, amount)]
 pub struct Withdraw {
